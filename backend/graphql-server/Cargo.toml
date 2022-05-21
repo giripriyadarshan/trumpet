@@ -1,0 +1,28 @@
+[package]
+name = "graphql-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [".", "entity"]
+
+[dependencies]
+actix-web = {version = "4", features = ["openssl"]}
+openssl = { version = "0.10", features = ["v110"]}
+serde = { version = "*", features = ["derive"] }
+
+juniper = "*"
+
+entity = { path = "entity" }
+
+[dependencies.sea-orm]
+version = "^0.8.0"
+features = [
+  "debug-print",
+  "runtime-actix-native-tls",
+#   "sqlx-mysql",
+  "sqlx-postgres",
+  # "sqlx-sqlite",
+]
