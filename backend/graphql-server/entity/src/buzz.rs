@@ -7,17 +7,19 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
+    pub user_id: i64,
     #[sea_orm(column_type = "Text")]
     pub description: String,
     #[sea_orm(column_type = "Text", nullable)]
     pub image_link: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub video_link: Option<String>,
-    #[sea_orm(column_type = "Text", nullable)]
+    #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
     pub buzz_words: Option<String>,
-    #[sea_orm(column_type = "Text", nullable)]
+    #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
     pub mentioned_users: Option<String>,
     pub ratings_id: Option<i64>,
+    pub created_at: DateTimeUtc,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -30,11 +32,41 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Ratings,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::Id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Users,
+    #[sea_orm(has_many = "super::reply::Entity")]
+    Reply,
+    #[sea_orm(has_many = "super::trending::Entity")]
+    Trending,
 }
 
 impl Related<super::ratings::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Ratings.def()
+    }
+}
+
+impl Related<super::users::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Users.def()
+    }
+}
+
+impl Related<super::reply::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Reply.def()
+    }
+}
+
+impl Related<super::trending::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Trending.def()
     }
 }
 

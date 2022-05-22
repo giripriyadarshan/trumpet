@@ -15,6 +15,7 @@ pub struct Model {
     pub contact_number: Option<String>,
     #[sea_orm(column_type = "Text")]
     pub user_password: String,
+    pub password_version: f64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

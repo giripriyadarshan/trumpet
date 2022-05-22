@@ -7,7 +7,7 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub auth_id: i32,
+    pub auth_id: i64,
     #[sea_orm(column_type = "Text")]
     pub full_name: String,
     #[sea_orm(column_type = "Text", nullable)]
@@ -16,6 +16,7 @@ pub struct Model {
     pub description: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub location_or_region: Option<String>,
+    pub created_at: DateTimeUtc,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -28,11 +29,27 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Auth,
+    #[sea_orm(has_many = "super::buzz::Entity")]
+    Buzz,
+    #[sea_orm(has_many = "super::reply::Entity")]
+    Reply,
 }
 
 impl Related<super::auth::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Auth.def()
+    }
+}
+
+impl Related<super::buzz::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Buzz.def()
+    }
+}
+
+impl Related<super::reply::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Reply.def()
     }
 }
 
