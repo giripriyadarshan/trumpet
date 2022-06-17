@@ -12,6 +12,7 @@ path = "src/lib.rs"
 entity = { path = "../entity" }
 sea-query = "*"
 chrono = "*"
+async-std = "1.11.0"
 
 [dependencies.sea-orm-migration]
 version = "^0.8.0"

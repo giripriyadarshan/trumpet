@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     profile_picture TEXT,
     description TEXT,
     location_or_region TEXT,
+    following BIGINT [],
+    followers BIGINT [],
     created_at TIMESTAMP NOT NULL 
 );
 

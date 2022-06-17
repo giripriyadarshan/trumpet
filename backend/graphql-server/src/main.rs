@@ -1,6 +1,17 @@
-use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+#[macro_use]
+extern crate juniper;
+
+use actix_web::{middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
+use entity::*;
+use migration::{Migrator, MigratorTrait};
+
+use sea_orm::{entity::*, query::*, DatabaseConnection};
+use serde::{Deserialize, Serialize};
+
+use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
+mod lib;
 mod schemas;
 
 async fn index(_req: HttpRequest) -> impl Responder {
@@ -22,8 +33,18 @@ async fn main() -> std::io::Result<()> {
         Err(_) => "127.0.0.1:8000".to_string(),
     };
 
-    HttpServer::new(|| App::new().route("/", web::get().to(index)))
-        .bind_openssl(host_address, builder)?
-        .run()
-        .await
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let connection = sea_orm::Database::connect(&db_url).await.unwrap();
+    Migrator::up(&connection, None).await.unwrap();
+
+    HttpServer::new(move || {
+        App::new()
+            .wrap(Logger::default())
+            .app_data(connection.clone())
+            .service(web::resource("/").name("home").route(web::get().to(index)))
+    })
+    .bind_openssl(host_address, builder)?
+    .run()
+    .await
 }

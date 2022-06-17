@@ -1,9 +1,18 @@
 [package]
-name = "graphql-server"
+name = "backend"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [
+    "entity",
+    "migration",
+    "graphql-server",
+    "auth-server",
+    "cdn-server",
+]
 
 [dependencies]
 actix-web = {version = "4", features = ["openssl"]}
@@ -14,8 +23,10 @@ chrono = "*"
 
 juniper = "*"
 
-entity = { path = "../entity" }
-migration = { path = "../migration" }
+entity = { path = "entity" }
+migration = { path = "migration" }
+
+async-std = "1.11.0"
 
 [dependencies.sea-orm]
 version = "^0.8.0"
@@ -26,3 +37,15 @@ features = [
   "sqlx-postgres",
   # "sqlx-sqlite",
 ]
+
+[[bin]]
+name = "graphql-server"
+path = "graphql-server/src/main.rs"
+
+[[bin]]
+name = "auth-server"
+path = "auth-server/src/main.rs"
+
+[[bin]]
+name = "cdn-server"
+path = "cdn-server/src/main.rs"
