@@ -4,13 +4,13 @@ extern crate juniper;
 use actix_web::{middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-use entity::*;
 use migration::{Migrator, MigratorTrait};
+// use entity::*;
 
-use sea_orm::{entity::*, query::*, DatabaseConnection};
-use serde::{Deserialize, Serialize};
+// use sea_orm::{entity::*, query::*, DatabaseConnection};
+// use serde::{Deserialize, Serialize};
 
-use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
+// use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
 mod lib;
 mod schemas;
 

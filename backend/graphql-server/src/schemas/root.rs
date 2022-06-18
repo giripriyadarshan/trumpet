@@ -13,6 +13,15 @@ pub struct QueryRoot;
 
 #[juniper::graphql_object(Context = Context)]
 impl QueryRoot {
+    async fn get_latest_buzz(_context: &Context) -> FieldResult<i32> {
+        todo!()
+    }
+}
+
+pub struct MutationRoot;
+
+#[juniper::graphql_object(Context = Context)]
+impl MutationRoot {
     #[graphql(description = "Create User")]
     async fn create_user(
         user: schemas::users::UserModify,
