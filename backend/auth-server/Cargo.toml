@@ -8,3 +8,18 @@ edition = "2021"
 [dependencies]
 actix-web = {version = "4", features = ["openssl"]}
 openssl = { version = "0.10", features = ["v110"] }
+argonautica = "0.2.0"
+serde = { version = "*", features = ["derive"] }
+entity = { path = "../entity" }
+jsonwebtoken = "^8"
+chrono = "*"
+
+[dependencies.sea-orm]
+version = "^0.8.0"
+features = [
+  "debug-print",
+  "runtime-actix-native-tls",
+#   "sqlx-mysql",
+  "sqlx-postgres",
+  # "sqlx-sqlite",
+]

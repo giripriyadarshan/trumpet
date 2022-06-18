@@ -27,6 +27,8 @@ entity = { path = "entity" }
 migration = { path = "migration" }
 
 async-std = "1.11.0"
+argonautica = "0.2.0"
+jsonwebtoken = "^8"
 
 [dependencies.sea-orm]
 version = "^0.8.0"

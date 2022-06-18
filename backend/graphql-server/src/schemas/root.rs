@@ -1,5 +1,10 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode};
-use sea_orm::{entity::*, query::*, ActiveValue::NotSet, DatabaseConnection, InsertResult};
+use sea_orm::{
+    entity::*, // , query::*
+    // , ActiveValue::NotSet
+    DatabaseConnection,
+    InsertResult,
+};
 
 use crate::schemas;
 
