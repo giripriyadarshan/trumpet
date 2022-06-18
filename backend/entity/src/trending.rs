@@ -7,28 +7,19 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub buzz_id: i64,
+    pub trending_id: Option<i64>,
     #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
     pub buzz_words: Option<String>,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::buzz::Entity",
-        from = "Column::BuzzId",
-        to = "super::buzz::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    Buzz,
-}
+#[derive(Copy, Clone, Debug, EnumIter)]
+pub enum Relation {}
 
-impl Related<super::buzz::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Buzz.def()
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        panic!("No RelationDef")
     }
 }
 

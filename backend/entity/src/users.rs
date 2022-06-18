@@ -16,6 +16,10 @@ pub struct Model {
     pub description: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub location_or_region: Option<String>,
+    #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
+    pub following: Option<String>,
+    #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
+    pub followers: Option<String>,
     pub created_at: DateTimeUtc,
 }
 

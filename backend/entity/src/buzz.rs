@@ -42,8 +42,6 @@ pub enum Relation {
     Users,
     #[sea_orm(has_many = "super::reply::Entity")]
     Reply,
-    #[sea_orm(has_many = "super::trending::Entity")]
-    Trending,
 }
 
 impl Related<super::ratings::Entity> for Entity {
@@ -61,12 +59,6 @@ impl Related<super::users::Entity> for Entity {
 impl Related<super::reply::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Reply.def()
-    }
-}
-
-impl Related<super::trending::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Trending.def()
     }
 }
 

@@ -82,6 +82,8 @@ impl MigrationTrait for Migration {
                             .timestamp()
                             .not_null(),
                     )
+                    .col(ColumnDef::new(users::Column::Following).array("BIGINT".to_string()))
+                    .col(ColumnDef::new(users::Column::Followers).array("BIGINT".to_string()))
                     .col(
                         ColumnDef::new(users::Column::CreatedAt)
                             .date_time()
@@ -112,12 +114,12 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(ratings::Column::Upvotes)
                             .big_integer()
-                            .default(0),
+                            .default(0 as i64),
                     )
                     .col(
                         ColumnDef::new(ratings::Column::Views)
                             .big_integer()
-                            .default(0),
+                            .default(0 as i64),
                     )
                     .to_owned(),
             )
@@ -232,14 +234,9 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(trending::Column::BuzzId)
+                        ColumnDef::new(trending::Column::TrendingId)
                             .big_integer()
                             .not_null(),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .from(trending::Entity, trending::Column::BuzzId)
-                            .to(buzz::Entity, buzz::Column::Id),
                     )
                     .col(ColumnDef::new(trending::Column::Description).text())
                     .col(ColumnDef::new(trending::Column::BuzzWords).array("TEXT".to_string()))

@@ -12,7 +12,6 @@ pub struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Hello, world!");
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
         .set_private_key_file("192.168.0.108+3-key.pem", SslFiletype::PEM)
