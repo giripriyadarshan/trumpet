@@ -6,8 +6,11 @@ use sea_orm::{
     InsertResult,
 };
 
+use argonautica::Hasher;
+
 use crate::schemas;
 
+#[derive(Debug, Clone)]
 pub struct Context {
     pub connection: DatabaseConnection,
 }
@@ -19,7 +22,7 @@ pub struct QueryRoot;
 #[juniper::graphql_object(Context = Context)]
 impl QueryRoot {
     async fn get_latest_buzz(_context: &Context) -> FieldResult<i32> {
-        todo!()
+        Ok(1)
     }
 }
 
@@ -34,11 +37,19 @@ impl MutationRoot {
         context: &Context,
     ) -> FieldResult<schemas::users::UserDetails> {
         let connection = &context.connection;
+
+        let key = std::env::var("PASSWORD_SECRET_KEY").expect("SECRET_KEY must be set");
+
+        let password = Hasher::default()
+            .with_password(authentication_details.password)
+            .with_secret_key(key)
+            .hash()
+            .unwrap();
         let auth_table = entity::auth::ActiveModel {
             contact_number: Set(authentication_details.contact_number),
             email: Set(authentication_details.email),
             password_version: Set(0.1),
-            user_password: Set(authentication_details.password),
+            user_password: Set(password),
             username: Set(authentication_details.username),
             ..Default::default()
         };
@@ -70,4 +81,10 @@ impl MutationRoot {
             location_or_region: user_table.location_or_region,
         })
     }
+}
+
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;
+
+pub fn create_schema() -> Schema {
+    Schema::new(QueryRoot, MutationRoot, EmptySubscription::new())
 }

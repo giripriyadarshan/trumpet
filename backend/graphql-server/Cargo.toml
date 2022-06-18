@@ -17,6 +17,10 @@ juniper = "*"
 entity = { path = "../entity" }
 migration = { path = "../migration" }
 
+argonautica = "0.2.0"
+
+actix-web-lab = "0.10"
+
 [dependencies.sea-orm]
 version = "^0.8.0"
 features = [

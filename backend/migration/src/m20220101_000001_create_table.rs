@@ -77,16 +77,12 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(users::Column::FullName).text().not_null())
                     .col(ColumnDef::new(users::Column::ProfilePicture).text())
                     .col(ColumnDef::new(users::Column::Description).text())
-                    .col(
-                        ColumnDef::new(users::Column::LocationOrRegion)
-                            .timestamp()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(users::Column::LocationOrRegion).text())
                     .col(ColumnDef::new(users::Column::Following).array("BIGINT".to_string()))
                     .col(ColumnDef::new(users::Column::Followers).array("BIGINT".to_string()))
                     .col(
                         ColumnDef::new(users::Column::CreatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .to_owned(),
@@ -160,7 +156,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(buzz::Column::CreatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .to_owned(),
@@ -214,7 +210,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(reply::Column::CreatedAt)
-                            .date_time()
+                            .timestamp_with_time_zone()
                             .not_null(),
                     )
                     .to_owned(),

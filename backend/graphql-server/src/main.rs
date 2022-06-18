@@ -1,10 +1,15 @@
 #[macro_use]
 extern crate juniper;
 
-use actix_web::{middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    http::Error, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+};
+use actix_web_lab::respond::Html;
+use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 use migration::{Migrator, MigratorTrait};
+use schemas::root::Context;
 // use entity::*;
 
 // use sea_orm::{entity::*, query::*, DatabaseConnection};
@@ -36,15 +41,42 @@ async fn main() -> std::io::Result<()> {
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let connection = sea_orm::Database::connect(&db_url).await.unwrap();
+
     Migrator::up(&connection, None).await.unwrap();
+    let state = Context { connection };
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .app_data(connection.clone())
+            .app_data(web::Data::new(state.clone()))
+            .app_data(web::Data::new(schemas::root::create_schema()))
             .service(web::resource("/").name("home").route(web::get().to(index)))
+            .service(
+                web::resource("/graphql")
+                    .route(web::post().to(graphql))
+                    .route(web::get().to(graphql)),
+            )
+            .service(web::resource("/graphiql").route(web::get().to(graphql_playground)))
     })
     .bind_openssl(host_address, builder)?
     .run()
     .await
+}
+
+async fn graphql(
+    pool: web::Data<Context>,
+    schema: web::Data<schemas::root::Schema>,
+    data: web::Json<GraphQLRequest>,
+) -> Result<HttpResponse, Error> {
+    let ctx = Context {
+        connection: pool.connection.to_owned(),
+    };
+
+    let res = data.execute(&schema, &ctx).await;
+
+    Ok(HttpResponse::Ok().json(res))
+}
+
+async fn graphql_playground() -> impl Responder {
+    Html(graphiql_source("/graphql", None))
 }
