@@ -39,7 +39,7 @@ pub async fn authenticate(
         .unwrap()
         .unwrap();
 
-    HttpResponse::Forbidden().json(AuthenticationStatus {
+    HttpResponse::Ok().json(AuthenticationStatus {
         user_id: user.id,
         is_authenticated: user.username == token.username
             && user.password_version == token.password_version,
