@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$1" ]; then
+    echo "Usage: $0 [<binary-name> ...]"
+    exit 1
+fi
+
 echo "RAM usage as on $(date)" >> memory_usage.out
 
 for bin in "$@"
