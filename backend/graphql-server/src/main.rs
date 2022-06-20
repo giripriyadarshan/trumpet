@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
 
     let host_address = match std::env::var("HOST_ADDRESS") {
         Ok(host_address) => host_address,
-        Err(_) => "127.0.0.1:8000".to_string(),
+        Err(_) => "0.0.0.0:8000".to_string(),
     };
 
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
