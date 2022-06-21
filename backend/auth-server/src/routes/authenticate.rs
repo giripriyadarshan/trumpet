@@ -7,7 +7,7 @@ use entity::auth;
 
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
-use super::login::{Claim, Token};
+use crate::models::{Claim, Token};
 
 #[derive(Serialize)]
 struct AuthenticationStatus {

@@ -5,6 +5,7 @@ use futures::future;
 
 use sea_orm::DatabaseConnection;
 
+mod models;
 mod routes;
 
 #[derive(Debug, Clone)]
@@ -40,7 +41,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(external_state.clone()))
-            .route("/login", web::post().to(routes::login::login))
+            .route("/jwt/{type}", web::post().to(routes::jwt::jwt))
     })
     .bind_openssl(external_address, external_builder)?
     .run();
