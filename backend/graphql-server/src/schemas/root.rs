@@ -74,7 +74,7 @@ impl MutationRoot {
                 let user_table = user_table.insert(connection).await;
 
                 match user_table {
-                    Ok(user_table) => Ok(crate::schemas::users::UserDetails {
+                    Ok(user_table) => Ok(schemas::users::UserDetails {
                         id: user_table.id as i32,
                         auth_id: Some(user_table.auth_id as i32),
                         full_name: user_table.full_name,

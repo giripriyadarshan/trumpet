@@ -22,7 +22,7 @@ pub async fn jwt(
         .await
         .unwrap();
 
-    match user {
+    return match user {
         Some(user) => {
             let valid = Verifier::default()
                 .with_hash(user.user_password.clone())
@@ -44,13 +44,13 @@ pub async fn jwt(
                 } else {
                     return HttpResponse::ServiceUnavailable().finish();
                 }
-                return HttpResponse::Ok().json(token);
+                HttpResponse::Ok().json(token)
             } else {
-                return HttpResponse::Forbidden().json("Invalid password");
+                HttpResponse::Forbidden().json("Invalid password")
             }
         }
         None => {
-            return HttpResponse::NotFound().json("User not found");
+            HttpResponse::NotFound().json("User not found")
         }
     }
 }
