@@ -54,32 +54,41 @@ impl MutationRoot {
             ..Default::default()
         };
 
-        let auth_id_from_insert: InsertResult<entity::auth::ActiveModel> =
+        let auth_insert: Result<InsertResult<entity::auth::ActiveModel>, migration::DbErr> =
             entity::auth::Entity::insert(auth_table)
                 .exec(connection)
-                .await
-                .unwrap();
+                .await;
 
-        let user_table = entity::users::ActiveModel {
-            auth_id: Set(auth_id_from_insert.last_insert_id),
-            full_name: Set(user.full_name),
-            profile_picture: Set(user.profile_picture),
-            description: Set(user.description),
-            location_or_region: Set(user.location_or_region),
-            created_at: Set(chrono::Utc::now()),
-            ..Default::default()
-        };
+        match auth_insert {
+            Ok(auth_id) => {
+                let user_table = entity::users::ActiveModel {
+                    auth_id: Set(auth_id.last_insert_id),
+                    full_name: Set(user.full_name),
+                    profile_picture: Set(user.profile_picture),
+                    description: Set(user.description),
+                    location_or_region: Set(user.location_or_region),
+                    created_at: Set(chrono::Utc::now()),
+                    ..Default::default()
+                };
 
-        let user_table = user_table.insert(connection).await.unwrap();
+                let user_table = user_table.insert(connection).await;
 
-        Ok(crate::schemas::users::UserDetails {
-            id: user_table.id as i32,
-            auth_id: Some(user_table.auth_id as i32),
-            full_name: user_table.full_name,
-            description: user_table.description,
-            profile_picture: user_table.profile_picture,
-            location_or_region: user_table.location_or_region,
-        })
+                match user_table {
+                    Ok(user_table) => Ok(crate::schemas::users::UserDetails {
+                        id: user_table.id as i32,
+                        auth_id: Some(user_table.auth_id as i32),
+                        full_name: user_table.full_name,
+                        description: user_table.description,
+                        profile_picture: user_table.profile_picture,
+                        location_or_region: user_table.location_or_region,
+                    }),
+
+                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null))
+                }
+            },
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null))
+        }
+
     }
 }
 
