@@ -37,22 +37,28 @@ pub async fn authenticate(
     match token {
         Ok(token) => {
             let token = token.claims;
-            let user = auth::Entity::find_by_id(token.user_id)
-                .one(&db.conn)
-                .await
-                .unwrap()
-                .unwrap();
+            let user = auth::Entity::find_by_id(token.user_id).one(&db.conn).await;
 
-            let time_now = Utc::now().timestamp() as usize;
-            let time_exp = token.exp;
+            match user {
+                Ok(user) => match user {
+                    Some(user) => {
+                        let time_now = Utc::now().timestamp() as usize;
+                        let time_exp = token.exp;
 
-            HttpResponse::Ok().json(AuthenticationStatus {
-                user_id: user.id,
-                is_authenticated: user.username == token.username
-                    && user.password_version == token.password_version,
-                username: user.username,
-                exp: time_exp - time_now < 120,
-            })
+                        HttpResponse::Ok().json(AuthenticationStatus {
+                            user_id: user.id,
+                            is_authenticated: user.username == token.username
+                                && user.password_version == token.password_version,
+                            username: user.username,
+                            exp: time_exp - time_now < 120,
+                        })
+                    }
+
+                    None => HttpResponse::NotFound().json("User not found"),
+                },
+
+                Err(e) => HttpResponse::InternalServerError().json(e.to_string()),
+            }
         }
 
         Err(e) => HttpResponse::Unauthorized().json(e),
