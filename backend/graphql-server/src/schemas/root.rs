@@ -83,12 +83,16 @@ impl MutationRoot {
                         location_or_region: user_table.location_or_region,
                     }),
 
-                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null))
+                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
                 }
-            },
-            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null))
+            }
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
         }
+    }
 
+    #[graphql(description = "delete user")]
+    async fn delete_user(_jwt: String, _context: &Context) -> FieldResult<bool> {
+        Ok(true)
     }
 }
 

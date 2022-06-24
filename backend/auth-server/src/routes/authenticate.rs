@@ -7,6 +7,8 @@ use entity::auth;
 
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
+use chrono::Utc;
+
 use crate::models::{Claim, Token};
 
 #[derive(Serialize)]
@@ -14,6 +16,7 @@ struct AuthenticationStatus {
     user_id: i64,
     username: String,
     is_authenticated: bool,
+    exp: bool,
 }
 
 pub async fn authenticate(
@@ -29,20 +32,29 @@ pub async fn authenticate(
         &DecodingKey::from_secret(key.as_ref()),
         &Validation::new(Algorithm::HS512),
     )
-    .map_err(|e| e.to_string())
-    .unwrap()
-    .claims;
+    .map_err(|e| e.to_string());
 
-    let user = auth::Entity::find_by_id(token.user_id)
-        .one(&db.conn)
-        .await
-        .unwrap()
-        .unwrap();
+    match token {
+        Ok(token) => {
+            let token = token.claims;
+            let user = auth::Entity::find_by_id(token.user_id)
+                .one(&db.conn)
+                .await
+                .unwrap()
+                .unwrap();
 
-    HttpResponse::Ok().json(AuthenticationStatus {
-        user_id: user.id,
-        is_authenticated: user.username == token.username
-            && user.password_version == token.password_version,
-        username: user.username,
-    })
+            let time_now = Utc::now().timestamp() as usize;
+            let time_exp = token.exp;
+
+            HttpResponse::Ok().json(AuthenticationStatus {
+                user_id: user.id,
+                is_authenticated: user.username == token.username
+                    && user.password_version == token.password_version,
+                username: user.username,
+                exp: time_exp - time_now < 120,
+            })
+        }
+
+        Err(e) => HttpResponse::Unauthorized().json(e),
+    }
 }

@@ -49,10 +49,8 @@ pub async fn jwt(
                 HttpResponse::Forbidden().json("Invalid password")
             }
         }
-        None => {
-            HttpResponse::NotFound().json("User not found")
-        }
-    }
+        None => HttpResponse::NotFound().json("User not found"),
+    };
 }
 
 fn generate_token(user: auth::Model, request_type: RequestType) -> String {
