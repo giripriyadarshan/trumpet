@@ -54,10 +54,10 @@ pub async fn authenticate(
                         })
                     }
 
-                    None => HttpResponse::NotFound().json("User not found"),
+                    None => HttpResponse::Unauthorized().json("User not found"),
                 },
 
-                Err(e) => HttpResponse::InternalServerError().json(e.to_string()),
+                Err(e) => HttpResponse::Unauthorized().json(e.to_string()),
             }
         }
 
