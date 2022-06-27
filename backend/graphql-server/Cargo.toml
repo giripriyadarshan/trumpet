@@ -9,8 +9,10 @@ edition = "2021"
 actix-web = {version = "4", features = ["openssl"]}
 openssl = { version = "0.10", features = ["v110"]}
 serde = { version = "*", features = ["derive"] }
-reqwest = "*"
+reqwest = { version = "*", features = ["json"] }
 chrono = "*"
+
+serde_json = "*"
 
 juniper = "*"
 

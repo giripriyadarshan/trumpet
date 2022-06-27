@@ -584,6 +584,7 @@ dependencies = [
  "reqwest",
  "sea-orm",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1424,6 +1425,7 @@ dependencies = [
  "reqwest",
  "sea-orm",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

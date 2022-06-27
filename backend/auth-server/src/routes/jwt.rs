@@ -56,21 +56,16 @@ pub async fn jwt(
 fn generate_token(user: auth::Model, request_type: RequestType) -> String {
     let key = std::env::var("AUTH_SECRET_KEY").expect("SECRET_KEY must be set");
 
-    let expiration: i64;
-    match request_type {
-        RequestType::Login => {
-            expiration = chrono::Utc::now()
-                .checked_add_signed(chrono::Duration::days(60))
-                .expect("valid timestamp")
-                .timestamp();
-        }
-        RequestType::OneTimeJwt => {
-            expiration = chrono::Utc::now()
-                .checked_add_signed(chrono::Duration::minutes(1))
-                .expect("valid timestamp")
-                .timestamp();
-        }
-    }
+    let expiration = match request_type {
+        RequestType::Login => chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::days(60))
+            .expect("valid timestamp")
+            .timestamp(),
+        RequestType::OneTimeJwt => chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::minutes(1))
+            .expect("valid timestamp")
+            .timestamp(),
+    };
 
     let claim = Claim {
         user_id: user.id,

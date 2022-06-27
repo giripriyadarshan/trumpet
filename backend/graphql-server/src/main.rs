@@ -15,7 +15,6 @@ use schemas::root::Context;
 // use sea_orm::{entity::*, query::*, DatabaseConnection};
 // use serde::{Deserialize, Serialize};
 
-// use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
 mod lib;
 mod schemas;
 

@@ -6,6 +6,11 @@ use sea_orm::{
     InsertResult,
 };
 
+use crate::lib::server_auth::{
+    authenticate,
+    AuthenticationStatus::{Authenticated, Unauthenticated},
+};
+
 use argonautica::Hasher;
 
 use crate::schemas;
@@ -91,8 +96,35 @@ impl MutationRoot {
     }
 
     #[graphql(description = "delete user")]
-    async fn delete_user(_jwt: String, _context: &Context) -> FieldResult<bool> {
-        Ok(true)
+    async fn delete_user(jwt: String, context: &Context) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+        match authentication {
+            Authenticated(authentication) => {
+                // let user = entity::users::Entity::find_by_id(authentication.user_id)
+                //     .one(connection)
+                //     .await;
+                // match user {
+                //     Ok(_user) => {
+                        // cascade delete auth and user ..... current implementation does not cover auth table
+                        // let user = user.unwrap();
+                        // let user = user.delete(connection).await;
+                        // match user {
+                        //     Ok(_) => Ok(true),
+                        //     Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                        // }
+                //         Ok(true)
+                //     }
+                //     Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                // }
+                Ok(true)
+            }
+
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        }
     }
 }
 
