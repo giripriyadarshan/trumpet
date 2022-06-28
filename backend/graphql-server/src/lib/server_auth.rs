@@ -4,6 +4,7 @@ use std::collections::HashMap;
 pub struct Authenticated {
     pub user_id: i64,
     pub username: String,
+    pub is_one_time_jwt: bool,
 }
 
 pub enum AuthenticationStatus {
@@ -32,6 +33,7 @@ pub async fn authenticate(jwt: String) -> AuthenticationStatus {
                     AuthenticationStatus::Authenticated(Authenticated {
                         user_id: json["user_id"].as_i64().unwrap(),
                         username: json["username"].as_str().unwrap().to_string(),
+                        is_one_time_jwt: json["is_one_time_jwt"].as_bool().unwrap(),
                     })
                 } else {
                     AuthenticationStatus::Unauthenticated

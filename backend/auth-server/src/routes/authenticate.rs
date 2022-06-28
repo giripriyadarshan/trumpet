@@ -16,7 +16,7 @@ struct AuthenticationStatus {
     user_id: i64,
     username: String,
     is_authenticated: bool,
-    exp: bool,
+    is_one_time_jwt: bool,
 }
 
 pub async fn authenticate(
@@ -50,7 +50,7 @@ pub async fn authenticate(
                             is_authenticated: user.username == token.username
                                 && user.password_version == token.password_version,
                             username: user.username,
-                            exp: time_exp - time_now < 120,
+                            is_one_time_jwt: (time_exp - time_now) < 120,
                         })
                     }
 
