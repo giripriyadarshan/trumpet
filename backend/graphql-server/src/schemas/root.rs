@@ -1,10 +1,5 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode};
-use sea_orm::{
-    entity::*, // , query::*
-    // , ActiveValue::NotSet
-    DatabaseConnection,
-    InsertResult,
-};
+use sea_orm::{entity::*, DatabaseConnection, InsertResult};
 
 use crate::lib::server_auth::{
     authenticate,
@@ -151,6 +146,62 @@ impl MutationRoot {
                 juniper::Value::Null,
             )),
         }
+    }
+
+    #[graphql(description = "update user")]
+    async fn update_user(
+        jwt: String,
+        user_modify: schemas::users::UserModify,
+        context: &Context,
+    ) -> FieldResult<schemas::users::UserDetails> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.is_one_time_jwt {
+                    let user = entity::users::Entity::find_by_id(authenticated.user_id)
+                        .one(connection)
+                        .await;
+                    match user {
+                        Ok(user) => {
+                            let mut user: entity::users::ActiveModel = user.unwrap().into();
+
+                            user.full_name = Set(user_modify.full_name);
+                            user.description = Set(user_modify.description);
+                            user.profile_picture = Set(user_modify.profile_picture);
+                            user.location_or_region = Set(user_modify.location_or_region);
+
+                            let user: Result<entity::users::Model, migration::DbErr> =
+                                user.update(connection).await;
+
+                            match user {
+                                Ok(user) => Ok(schemas::users::UserDetails {
+                                    id: user.id as i32,
+                                    auth_id: Some(user.auth_id as i32),
+                                    full_name: user.full_name,
+                                    description: user.description,
+                                    profile_picture: user.profile_picture,
+                                    location_or_region: user.location_or_region,
+                                }),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Authentication Failed",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
     }
 }
 
