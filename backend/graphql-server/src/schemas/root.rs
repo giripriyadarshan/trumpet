@@ -101,23 +101,37 @@ impl MutationRoot {
         let authentication = authenticate(jwt).await;
         match authentication {
             Authenticated(authentication) => {
-                // let user = entity::users::Entity::find_by_id(authentication.user_id)
-                //     .one(connection)
-                //     .await;
-                // match user {
-                //     Ok(_user) => {
+                let user = entity::users::Entity::find_by_id(authentication.user_id)
+                    .one(connection)
+                    .await;
+                match user {
+                    Ok(user) => {
                         // cascade delete auth and user ..... current implementation does not cover auth table
-                        // let user = user.unwrap();
-                        // let user = user.delete(connection).await;
-                        // match user {
-                        //     Ok(_) => Ok(true),
-                        //     Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
-                        // }
-                //         Ok(true)
-                //     }
-                //     Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
-                // }
-                Ok(true)
+                        let user = user.unwrap();
+                        let auth_id = user.auth_id;
+                        let user = user.delete(connection).await;
+                        return match user {
+                            Ok(_) => {
+                                let auth = entity::auth::Entity::find_by_id(auth_id)
+                                    .one(connection)
+                                    .await;
+                                match auth {
+                                    Ok(auth) => {
+                                        let auth = auth.unwrap();
+                                        let auth = auth.delete(connection).await;
+                                        match auth {
+                                            Ok(_) => Ok(true),
+                                            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                                        }
+                                    }
+                                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                                }
+                            },
+                            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                        }
+                    }
+                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                }
             }
 
             Unauthenticated => Err(FieldError::new(
