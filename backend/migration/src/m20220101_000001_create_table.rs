@@ -110,12 +110,12 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(ratings::Column::Upvotes)
                             .big_integer()
-                            .default(0 as i64),
+                            .default(0_i64),
                     )
                     .col(
                         ColumnDef::new(ratings::Column::Views)
                             .big_integer()
-                            .default(0 as i64),
+                            .default(0_i64),
                     )
                     .to_owned(),
             )

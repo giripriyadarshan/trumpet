@@ -16,8 +16,10 @@ pub async fn authenticate(jwt: String) -> AuthenticationStatus {
     let mut json_jwt = HashMap::new();
     json_jwt.insert("jwt", jwt);
 
-    let client = reqwest::Client::builder().danger_accept_invalid_certs(true)
-        .build().unwrap();
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap();
     let res = client
         .post("https://localhost:9004/authenticate")
         .json(&json_jwt)

@@ -107,7 +107,6 @@ impl MutationRoot {
                         .await;
                     match user {
                         Ok(user) => {
-                            // cascade delete auth and user ..... current implementation does not cover auth table
                             let user = user.unwrap();
                             let auth_id = user.auth_id;
                             let user = user.delete(connection).await;
@@ -122,14 +121,20 @@ impl MutationRoot {
                                             let auth = auth.delete(connection).await;
                                             match auth {
                                                 Ok(_) => Ok(true),
-                                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                                                Err(e) => Err(FieldError::new(
+                                                    e.to_string(),
+                                                    juniper::Value::Null,
+                                                )),
                                             }
                                         }
-                                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                                        Err(e) => Err(FieldError::new(
+                                            e.to_string(),
+                                            juniper::Value::Null,
+                                        )),
                                     }
-                                },
+                                }
                                 Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
-                            }
+                            };
                         }
                         Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
                     }
