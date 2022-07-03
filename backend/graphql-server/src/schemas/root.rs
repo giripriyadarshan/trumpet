@@ -196,6 +196,181 @@ impl MutationRoot {
             )),
         };
     }
+
+    #[graphql(description = "change username")]
+    async fn change_username(
+        jwt: String,
+        username: String,
+        context: &Context,
+    ) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.is_one_time_jwt {
+                    let auth = entity::auth::Entity::find_by_id(authenticated.user_id)
+                        .one(connection)
+                        .await;
+                    match auth {
+                        Ok(auth) => {
+                            let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
+
+                            auth.username = Set(username);
+                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                                auth.update(connection).await;
+                            match auth {
+                                Ok(_) => Ok(true),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Authentication Failed",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
+
+    #[graphql(description = "change password")]
+    async fn change_password(
+        jwt: String,
+        password: String,
+        context: &Context,
+    ) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+        let key = std::env::var("PASSWORD_SECRET_KEY").expect("SECRET_KEY must be set");
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.is_one_time_jwt {
+                    let auth = entity::auth::Entity::find_by_id(authenticated.user_id)
+                        .one(connection)
+                        .await;
+                    match auth {
+                        Ok(auth) => {
+                            let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
+
+                            let password = Hasher::default()
+                                .with_password(password)
+                                .with_secret_key(key)
+                                .hash()
+                                .unwrap();
+
+                            auth.user_password = Set(password);
+                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                                auth.update(connection).await;
+                            match auth {
+                                Ok(_) => Ok(true),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Authentication Failed",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
+
+    #[graphql(description = "change email")]
+    async fn change_email(jwt: String, email: String, context: &Context) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.is_one_time_jwt {
+                    let auth = entity::auth::Entity::find_by_id(authenticated.user_id)
+                        .one(connection)
+                        .await;
+                    match auth {
+                        Ok(auth) => {
+                            let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
+
+                            auth.email = Set(email);
+                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                                auth.update(connection).await;
+                            match auth {
+                                Ok(_) => Ok(true),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Authentication Failed",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
+
+    #[graphql(description = "change contact number")]
+    async fn change_contact_number(
+        jwt: String,
+        contact_number: String,
+        context: &Context,
+    ) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.is_one_time_jwt {
+                    let auth = entity::auth::Entity::find_by_id(authenticated.user_id)
+                        .one(connection)
+                        .await;
+                    match auth {
+                        Ok(auth) => {
+                            let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
+
+                            auth.contact_number = Set(Some(contact_number));
+                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                                auth.update(connection).await;
+                            match auth {
+                                Ok(_) => Ok(true),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Authentication Failed",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;
