@@ -1,5 +1,5 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode};
-use sea_orm::{entity::*, DatabaseConnection, InsertResult};
+use sea_orm::{entity::*, DatabaseConnection, InsertResult, QueryFilter};
 
 use crate::lib::server_auth::{
     authenticate,
@@ -97,19 +97,20 @@ impl MutationRoot {
         match authentication {
             Authenticated(authentication) => {
                 if authentication.is_one_time_jwt {
-                    let user = entity::users::Entity::find_by_id(authentication.user_id)
+                    let user = entity::users::Entity::find()
+                        .filter(entity::users::Column::AuthId.eq(authentication.user_id))
                         .one(connection)
                         .await;
                     match user {
                         Ok(user) => {
                             let user = user.unwrap();
-                            let auth_id = user.auth_id;
                             let user = user.delete(connection).await;
                             return match user {
                                 Ok(_) => {
-                                    let auth = entity::auth::Entity::find_by_id(auth_id)
-                                        .one(connection)
-                                        .await;
+                                    let auth =
+                                        entity::auth::Entity::find_by_id(authentication.user_id)
+                                            .one(connection)
+                                            .await;
                                     match auth {
                                         Ok(auth) => {
                                             let auth = auth.unwrap();
@@ -159,7 +160,8 @@ impl MutationRoot {
 
         return match authentication {
             Authenticated(authenticated) => {
-                let user = entity::users::Entity::find_by_id(authenticated.user_id)
+                let user = entity::users::Entity::find()
+                    .filter(entity::users::Column::AuthId.eq(authenticated.user_id))
                     .one(connection)
                     .await;
                 match user {
