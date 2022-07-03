@@ -373,6 +373,45 @@ impl MutationRoot {
             )),
         };
     }
+
+    #[graphql(description = "logout from all devices")]
+    async fn logout_from_all_devices(jwt: String, context: &Context) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.is_one_time_jwt {
+                    let auth = entity::auth::Entity::find_by_id(authenticated.user_id)
+                        .one(connection)
+                        .await;
+                    match auth {
+                        Ok(auth) => {
+                            let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
+
+                            auth.password_version = Set(auth.password_version.unwrap() + 0.1_f64);
+                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                                auth.update(connection).await;
+                            match auth {
+                                Ok(_) => Ok(true),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Authentication Failed",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;
