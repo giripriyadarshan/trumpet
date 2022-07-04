@@ -410,7 +410,6 @@ impl MutationRoot {
             )),
         };
     }
-
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;

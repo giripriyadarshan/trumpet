@@ -33,10 +33,16 @@ pub async fn jwt(
 
             if valid {
                 let token: Token;
-                let user_id: i64 = entity::users::Entity::find().filter(entity::users::Column::AuthId.eq(auth.id)).one(&db.conn).await.unwrap().unwrap().id;
+                let user_id: i64 = entity::users::Entity::find()
+                    .filter(entity::users::Column::AuthId.eq(auth.id))
+                    .one(&db.conn)
+                    .await
+                    .unwrap()
+                    .unwrap()
+                    .id;
                 if path.as_str() == "login" {
                     token = Token {
-                        jwt: generate_token(auth, user_id ,RequestType::Login),
+                        jwt: generate_token(auth, user_id, RequestType::Login),
                     };
                 } else if path.as_str() == "one-time-jwt" {
                     token = Token {
