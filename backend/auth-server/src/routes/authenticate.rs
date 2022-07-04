@@ -37,9 +37,9 @@ pub async fn authenticate(
     match token {
         Ok(token) => {
             let token = token.claims;
-            let user = auth::Entity::find_by_id(token.user_id).one(&db.conn).await;
+            let auth = auth::Entity::find_by_id(token.auth_id).one(&db.conn).await;
 
-            match user {
+            match auth {
                 Ok(user) => match user {
                     Some(user) => {
                         let time_now = Utc::now().timestamp() as usize;

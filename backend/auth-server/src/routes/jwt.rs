@@ -16,16 +16,16 @@ pub async fn jwt(
 ) -> impl Responder {
     let secret = std::env::var("PASSWORD_SECRET_KEY").unwrap();
 
-    let user = auth::Entity::find()
+    let get_auth = auth::Entity::find()
         .filter(auth::Column::Username.eq(form.username.clone()))
         .one(&db.conn)
         .await
         .unwrap();
 
-    return match user {
-        Some(user) => {
+    return match get_auth {
+        Some(auth) => {
             let valid = Verifier::default()
-                .with_hash(user.user_password.clone())
+                .with_hash(auth.user_password.clone())
                 .with_password(form.password.clone())
                 .with_secret_key(secret)
                 .verify()
@@ -33,13 +33,14 @@ pub async fn jwt(
 
             if valid {
                 let token: Token;
+                let user_id: i64 = entity::users::Entity::find().filter(entity::users::Column::AuthId.eq(auth.id)).one(&db.conn).await.unwrap().unwrap().id;
                 if path.as_str() == "login" {
                     token = Token {
-                        jwt: generate_token(user, RequestType::Login),
+                        jwt: generate_token(auth, user_id ,RequestType::Login),
                     };
                 } else if path.as_str() == "one-time-jwt" {
                     token = Token {
-                        jwt: generate_token(user, RequestType::OneTimeJwt),
+                        jwt: generate_token(auth, user_id, RequestType::OneTimeJwt),
                     };
                 } else {
                     return HttpResponse::ServiceUnavailable().finish();
@@ -53,7 +54,7 @@ pub async fn jwt(
     };
 }
 
-fn generate_token(user: auth::Model, request_type: RequestType) -> String {
+fn generate_token(auth: auth::Model, user_id: i64, request_type: RequestType) -> String {
     let key = std::env::var("AUTH_SECRET_KEY").expect("SECRET_KEY must be set");
 
     let expiration = match request_type {
@@ -68,9 +69,10 @@ fn generate_token(user: auth::Model, request_type: RequestType) -> String {
     };
 
     let claim = Claim {
-        user_id: user.id,
-        username: user.username,
-        password_version: user.password_version,
+        auth_id: auth.id,
+        user_id,
+        username: auth.username,
+        password_version: auth.password_version,
         exp: expiration as usize,
     };
     let token = encode(

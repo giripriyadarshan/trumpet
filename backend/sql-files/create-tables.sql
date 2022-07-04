@@ -1,3 +1,5 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
 CREATE TABLE IF NOT EXISTS auth (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
