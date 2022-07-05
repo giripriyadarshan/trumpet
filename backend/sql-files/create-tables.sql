@@ -19,15 +19,13 @@ CREATE TABLE IF NOT EXISTS users (
     profile_picture TEXT,
     description TEXT,
     location_or_region TEXT,
-    following BIGINT [],
-    followers BIGINT [],
-    created_at TIMESTAMP NOT NULL 
+    following TEXT,
+    followers TEXT,
+    created_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ratings (
     id BIGSERIAL PRIMARY KEY,
-    is_buzz BOOLEAN NOT NULL,
-    module_id BIGINT NOT NULL,
     upvotes BIGINT DEFAULT 0,
     views BIGINT DEFAULT 0
 );
@@ -38,10 +36,10 @@ CREATE TABLE IF NOT EXISTS buzz (
     description TEXT NOT NULL,
     image_link TEXT,
     video_link TEXT,
-    buzz_words TEXT [],
-    mentioned_users BIGINT [],
+    buzz_words TEXT,
+    mentioned_users TEXT,
     ratings_id BIGINT REFERENCES ratings(id),
-    created_at TIMESTAMP NOT NULL 
+    created_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS reply(
@@ -49,15 +47,15 @@ CREATE TABLE IF NOT EXISTS reply(
     user_id BIGINT NOT NULL REFERENCES users(id),
     buzz_id BIGINT NOT NULL REFERENCES buzz(id),
     reply_content TEXT NOT NULL,
-    buzz_words TEXT [],
-    mentioned_users BIGINT [],
+    buzz_words TEXT,
+    mentioned_users TEXT,
     ratings_id BIGINT REFERENCES ratings(id),
-    created_at TIMESTAMP NOT NULL 
+    created_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS trending (
     id BIGSERIAL PRIMARY KEY,
     trending_id BIGINT,
     description TEXT,
-    buzz_words TEXT []
+    buzz_words TEXT
 );

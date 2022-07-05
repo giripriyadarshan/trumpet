@@ -1,3 +1,5 @@
+use sea_orm::prelude::DateTimeWithTimeZone;
+
 #[derive(GraphQLInputObject)]
 #[graphql(description = "Create the buzz")]
 pub struct BuzzInput {
@@ -5,8 +7,8 @@ pub struct BuzzInput {
     pub description: String,
     pub image_link: Option<String>,
     pub video_link: Option<String>,
-    pub buzz_words: Option<Vec<String>>,
-    pub mentioned_users: Option<Vec<String>>,
+    pub buzz_words: Option<String>,
+    pub mentioned_users: Option<String>,
 }
 
 #[derive(GraphQLObject)]
@@ -16,6 +18,8 @@ pub struct BuzzResult {
     pub description: String,
     pub image_link: Option<String>,
     pub video_link: Option<String>,
-    pub buzz_words: Option<Vec<String>>,
-    pub mentioned_users: Option<Vec<String>>,
+    pub buzz_words: Option<String>,
+    pub mentioned_users: Option<String>,
+    pub ratings_id: Option<String>,
+    pub created_at: DateTimeWithTimeZone,
 }

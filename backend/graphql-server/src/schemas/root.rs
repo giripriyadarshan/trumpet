@@ -67,7 +67,7 @@ impl MutationRoot {
                     profile_picture: Set(user.profile_picture),
                     description: Set(user.description),
                     location_or_region: Set(user.location_or_region),
-                    created_at: Set(chrono::Utc::now()),
+                    created_at: Set(chrono::DateTime::from(chrono::Utc::now())),
                     ..Default::default()
                 };
 
@@ -404,6 +404,79 @@ impl MutationRoot {
                     ))
                 }
             }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
+
+    #[graphql(description = "create a buzz")]
+    async fn create_buzz(
+        jwt: String,
+        buzz: schemas::buzz::BuzzInput,
+        context: &Context,
+    ) -> FieldResult<schemas::buzz::BuzzResult> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.user_id.to_string() == buzz.user_id {
+                    let ratings_table = entity::ratings::ActiveModel {
+                        ..Default::default()
+                    };
+
+                    let ratings_insert: Result<
+                        InsertResult<entity::ratings::ActiveModel>,
+                        migration::DbErr,
+                    > = entity::ratings::Entity::insert(ratings_table)
+                        .exec(connection)
+                        .await;
+
+                    match ratings_insert {
+                        Ok(ratings) => {
+                            let buzz_table = entity::buzz::ActiveModel {
+                                user_id: Set(buzz.user_id.to_string().parse::<i64>().unwrap()),
+                                description: Set(buzz.description),
+                                image_link: Set(buzz.image_link),
+                                video_link: Set(buzz.video_link),
+                                buzz_words: Set(buzz.buzz_words),
+                                mentioned_users: Set(buzz.mentioned_users),
+                                ratings_id: Set(Some(ratings.last_insert_id)),
+                                created_at: Set(chrono::DateTime::from(chrono::Utc::now())),
+
+                                ..Default::default()
+                            };
+
+                            let buzz_insert = buzz_table.insert(connection).await;
+
+                            match buzz_insert {
+                                Ok(buzz) => Ok(schemas::buzz::BuzzResult {
+                                    id: buzz.id.to_string(),
+                                    user_id: buzz.user_id.to_string(),
+                                    description: buzz.description,
+                                    image_link: buzz.image_link,
+                                    video_link: buzz.video_link,
+                                    buzz_words: buzz.buzz_words,
+                                    mentioned_users: buzz.mentioned_users,
+                                    ratings_id: Some(buzz.ratings_id.unwrap_or(-1).to_string()),
+                                    created_at: buzz.created_at,
+                                }),
+
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Cant create buzz on behalf of other users",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+
             Unauthenticated => Err(FieldError::new(
                 "Authentication Failed",
                 juniper::Value::Null,

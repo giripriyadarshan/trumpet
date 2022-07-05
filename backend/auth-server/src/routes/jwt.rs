@@ -43,10 +43,12 @@ pub async fn jwt(
                 if path.as_str() == "login" {
                     token = Token {
                         jwt: generate_token(auth, user_id, RequestType::Login),
+                        user_id,
                     };
                 } else if path.as_str() == "one-time-jwt" {
                     token = Token {
                         jwt: generate_token(auth, user_id, RequestType::OneTimeJwt),
+                        user_id,
                     };
                 } else {
                     return HttpResponse::ServiceUnavailable().finish();

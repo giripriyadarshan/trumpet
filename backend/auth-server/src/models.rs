@@ -18,6 +18,12 @@ pub struct Claim {
 #[derive(Serialize, Deserialize)]
 pub struct Token {
     pub jwt: String,
+    pub user_id: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct InputToken {
+    pub jwt: String,
 }
 
 pub enum RequestType {

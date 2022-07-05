@@ -9,18 +9,19 @@ use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
 use chrono::Utc;
 
-use crate::models::{Claim, Token};
+use crate::models::{Claim, InputToken};
 
 #[derive(Serialize)]
 struct AuthenticationStatus {
     user_id: i64,
+    auth_id: i64,
     username: String,
     is_authenticated: bool,
     is_one_time_jwt: bool,
 }
 
 pub async fn authenticate(
-    form: web::Json<Token>,
+    form: web::Json<InputToken>,
     db: web::Data<crate::AppState>,
 ) -> impl Responder {
     let key = std::env::var("AUTH_SECRET_KEY").unwrap();
@@ -46,7 +47,8 @@ pub async fn authenticate(
                         let time_exp = token.exp;
 
                         HttpResponse::Ok().json(AuthenticationStatus {
-                            user_id: user.id,
+                            user_id: token.user_id,
+                            auth_id: user.id,
                             is_authenticated: user.username == token.username
                                 && user.password_version == token.password_version,
                             username: user.username,

@@ -11,12 +11,12 @@ pub struct Model {
     pub buzz_id: i64,
     #[sea_orm(column_type = "Text")]
     pub reply_content: String,
-    #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
+    #[sea_orm(column_type = "Text", nullable)]
     pub buzz_words: Option<String>,
-    #[sea_orm(column_type = "Custom(\"array\".to_owned())", nullable)]
+    #[sea_orm(column_type = "Text", nullable)]
     pub mentioned_users: Option<String>,
     pub ratings_id: Option<i64>,
-    pub created_at: DateTimeUtc,
+    pub created_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

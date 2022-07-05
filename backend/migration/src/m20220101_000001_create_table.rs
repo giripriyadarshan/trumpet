@@ -78,8 +78,8 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(users::Column::ProfilePicture).text())
                     .col(ColumnDef::new(users::Column::Description).text())
                     .col(ColumnDef::new(users::Column::LocationOrRegion).text())
-                    .col(ColumnDef::new(users::Column::Following).array("BIGINT".to_string()))
-                    .col(ColumnDef::new(users::Column::Followers).array("BIGINT".to_string()))
+                    .col(ColumnDef::new(users::Column::Following).text())
+                    .col(ColumnDef::new(users::Column::Followers).text())
                     .col(
                         ColumnDef::new(users::Column::CreatedAt)
                             .timestamp_with_time_zone()
@@ -100,12 +100,6 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .auto_increment()
                             .primary_key(),
-                    )
-                    .col(ColumnDef::new(ratings::Column::IsBuzz).boolean().not_null())
-                    .col(
-                        ColumnDef::new(ratings::Column::ModuleId)
-                            .big_integer()
-                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(ratings::Column::Upvotes)
@@ -146,8 +140,8 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(buzz::Column::Description).text().not_null())
                     .col(ColumnDef::new(buzz::Column::ImageLink).text())
                     .col(ColumnDef::new(buzz::Column::VideoLink).text())
-                    .col(ColumnDef::new(buzz::Column::BuzzWords).array("TEXT".to_string()))
-                    .col(ColumnDef::new(buzz::Column::MentionedUsers).array("BIGINT".to_string()))
+                    .col(ColumnDef::new(buzz::Column::BuzzWords).text())
+                    .col(ColumnDef::new(buzz::Column::MentionedUsers).text())
                     .col(ColumnDef::new(buzz::Column::RatingsId).big_integer())
                     .foreign_key(
                         ForeignKey::create()
@@ -200,8 +194,8 @@ impl MigrationTrait for Migration {
                             .text()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(reply::Column::BuzzWords).array("TEXT".to_string()))
-                    .col(ColumnDef::new(reply::Column::MentionedUsers).array("BIGINT".to_string()))
+                    .col(ColumnDef::new(reply::Column::BuzzWords).text())
+                    .col(ColumnDef::new(reply::Column::MentionedUsers).text())
                     .col(ColumnDef::new(reply::Column::RatingsId).big_integer())
                     .foreign_key(
                         ForeignKey::create()
@@ -235,7 +229,7 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(trending::Column::Description).text())
-                    .col(ColumnDef::new(trending::Column::BuzzWords).array("TEXT".to_string()))
+                    .col(ColumnDef::new(trending::Column::BuzzWords).text())
                     .to_owned(),
             )
             .await

@@ -7,8 +7,6 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub is_buzz: bool,
-    pub module_id: i64,
     pub upvotes: Option<i64>,
     pub views: Option<i64>,
 }
