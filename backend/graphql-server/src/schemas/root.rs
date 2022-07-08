@@ -483,6 +483,50 @@ impl MutationRoot {
             )),
         };
     }
+
+    #[graphql(description = "delete buzz")]
+    async fn delete_buzz(jwt: String, buzz_id: String, context: &Context) -> FieldResult<bool> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                let get_buzz = entity::buzz::Entity::find_by_id(buzz_id.parse::<i64>().unwrap())
+                    .one(connection)
+                    .await;
+                match get_buzz {
+                    Ok(buzz) => match buzz {
+                        Some(buzz) => {
+                            if buzz.user_id.to_string() == authenticated.user_id.to_string() {
+                                let buzz_delete = entity::buzz::Entity::delete_by_id(
+                                    buzz_id.parse::<i64>().unwrap(),
+                                )
+                                .exec(connection)
+                                .await;
+                                match buzz_delete {
+                                    Ok(_) => Ok(true),
+                                    Err(e) => {
+                                        Err(FieldError::new(e.to_string(), juniper::Value::Null))
+                                    }
+                                }
+                            } else {
+                                Err(FieldError::new(
+                                    "Cant delete buzz on behalf of other users",
+                                    juniper::Value::Null,
+                                ))
+                            }
+                        }
+                        None => Err(FieldError::new("Buzz not found", juniper::Value::Null)),
+                    },
+                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;
