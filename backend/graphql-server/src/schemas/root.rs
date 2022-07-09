@@ -527,6 +527,74 @@ impl MutationRoot {
             )),
         };
     }
+
+    #[graphql(description = "create reply")]
+    async fn create_reply(
+        jwt: String,
+        reply: schemas::reply::ReplyInput,
+        context: &Context,
+    ) -> FieldResult<schemas::reply::ReplyResult> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                if authenticated.user_id.to_string() == reply.user_id {
+                    let ratings_table = entity::ratings::ActiveModel {
+                        ..Default::default()
+                    };
+
+                    let ratings_insert: Result<
+                        InsertResult<entity::ratings::ActiveModel>,
+                        migration::DbErr,
+                    > = entity::ratings::Entity::insert(ratings_table)
+                        .exec(connection)
+                        .await;
+
+                    match ratings_insert {
+                        Ok(ratings) => {
+                            let reply_table = entity::reply::ActiveModel {
+                                user_id: Set(authenticated.user_id),
+                                buzz_id: Set(reply.buzz_id.parse().unwrap()),
+                                reply_content: Set(reply.reply_content),
+                                buzz_words: Set(reply.buzz_words),
+                                mentioned_users: Set(reply.mentioned_users),
+                                ratings_id: Set(Some(ratings.last_insert_id)),
+                                created_at: Set(chrono::DateTime::from(chrono::Utc::now())),
+                                ..Default::default()
+                            };
+
+                            let reply_insert = reply_table.insert(connection).await;
+
+                            match reply_insert {
+                                Ok(reply) => Ok(schemas::reply::ReplyResult {
+                                    id: reply.id.to_string(),
+                                    user_id: reply.user_id.to_string(),
+                                    buzz_id: reply.buzz_id.to_string(),
+                                    reply_content: reply.reply_content,
+                                    buzz_words: reply.buzz_words,
+                                    mentioned_users: reply.mentioned_users,
+                                    ratings_id: Some(reply.ratings_id.unwrap_or(-1).to_string()),
+                                    created_at: reply.created_at,
+                                }),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                    }
+                } else {
+                    Err(FieldError::new(
+                        "Cant create reply on behalf of other users",
+                        juniper::Value::Null,
+                    ))
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;

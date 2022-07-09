@@ -6,7 +6,8 @@ pub mod reply;
 pub mod trending;
 */
 pub mod auth;
-mod buzz;
-mod ratings;
+pub mod buzz;
+pub mod ratings;
+pub mod reply;
 pub mod root;
 pub mod users;
