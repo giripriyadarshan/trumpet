@@ -111,6 +111,7 @@ impl MigrationTrait for Migration {
                             .big_integer()
                             .default(0_i64),
                     )
+                    .col(ColumnDef::new(ratings::Column::UpvotedBy).text())
                     .to_owned(),
             )
             .await?;

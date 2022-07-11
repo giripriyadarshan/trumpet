@@ -639,6 +639,102 @@ impl MutationRoot {
             )),
         };
     }
+
+    #[graphql(description = "upvote buzz/reply")]
+    async fn upvote(
+        jwt: String,
+        ratings_id: String,
+        context: &Context,
+    ) -> FieldResult<schemas::ratings::UpvoteResponse> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                let get_ratings =
+                    entity::ratings::Entity::find_by_id(ratings_id.parse::<i64>().unwrap())
+                        .one(connection)
+                        .await;
+                match get_ratings {
+                    Ok(upvote) => match upvote {
+                        Some(upvote) => {
+                            let mut ratings_table: entity::ratings::ActiveModel = upvote.into();
+                            let users = ratings_table
+                                .get(entity::ratings::Column::UpvotedBy)
+                                .into_value()
+                                .unwrap()
+                                .unwrap::<Option<String>>();
+
+                            let mut finally_is_it_upvote: bool = false;
+
+                            let mut add_user_to_upvoted_by =
+                                |mut user_details: std::collections::HashSet<String>,
+                                 value: i64| {
+                                    if value == 1 {
+                                        user_details.insert(authenticated.user_id.to_string());
+                                        finally_is_it_upvote = true;
+                                    } else {
+                                        user_details.remove(&authenticated.user_id.to_string());
+                                        finally_is_it_upvote = false;
+                                    }
+
+                                    ratings_table.upvotes = Set(Some(
+                                        ratings_table
+                                            .get(entity::ratings::Column::Upvotes)
+                                            .into_value()
+                                            .unwrap()
+                                            .unwrap::<i64>()
+                                            + value,
+                                    ));
+                                    ratings_table.upvoted_by = Set(Some(
+                                        user_details
+                                            .into_iter()
+                                            .collect::<Vec<String>>()
+                                            .join(", "),
+                                    ));
+                                };
+                            match users {
+                                Some(users) => {
+                                    let users_set: std::collections::HashSet<String> = users
+                                        .split(", ")
+                                        .map(|s| s.to_string())
+                                        .collect::<std::collections::HashSet<String>>();
+
+                                    if users_set.contains(&authenticated.user_id.to_string()) {
+                                        add_user_to_upvoted_by(users_set, -1);
+                                    } else {
+                                        add_user_to_upvoted_by(users_set, 1);
+                                    }
+                                }
+
+                                None => {
+                                    let users_set: std::collections::HashSet<String> =
+                                        std::collections::HashSet::new();
+
+                                    add_user_to_upvoted_by(users_set, 1);
+                                }
+                            }
+
+                            let ratings_update = ratings_table.update(connection).await;
+                            match ratings_update {
+                                Ok(_) => Ok(schemas::ratings::UpvoteResponse {
+                                    is_upvoted: finally_is_it_upvote,
+                                    id: ratings_id,
+                                }),
+                                Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                            }
+                        }
+                        None => Err(FieldError::new("Upvote not found", juniper::Value::Null)),
+                    },
+                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                }
+            }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;

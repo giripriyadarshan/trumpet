@@ -9,6 +9,8 @@ pub struct Model {
     pub id: i64,
     pub upvotes: Option<i64>,
     pub views: Option<i64>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub upvoted_by: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
