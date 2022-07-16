@@ -15,3 +15,9 @@ pub struct UserDetails {
     pub profile_picture: Option<String>,
     pub location_or_region: Option<String>,
 }
+
+#[derive(GraphQLObject)]
+pub struct FollowResponse {
+    pub following_id: String,
+    pub is_following: bool,
+}

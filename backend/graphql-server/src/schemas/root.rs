@@ -1,9 +1,12 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode};
 use sea_orm::{entity::*, DatabaseConnection, InsertResult};
 
-use crate::lib::server_auth::{
-    authenticate,
-    AuthenticationStatus::{Authenticated, Unauthenticated},
+use crate::lib::{
+    common::*,
+    server_auth::{
+        authenticate,
+        AuthenticationStatus::{Authenticated, Unauthenticated},
+    },
 };
 
 use argonautica::Hasher;
@@ -686,19 +689,13 @@ impl MutationRoot {
                                             .unwrap::<i64>()
                                             + value,
                                     ));
-                                    ratings_table.upvoted_by = Set(Some(
-                                        user_details
-                                            .into_iter()
-                                            .collect::<Vec<String>>()
-                                            .join(", "),
-                                    ));
+                                    ratings_table.upvoted_by =
+                                        Set(Some(convert_set_to_string(user_details)));
                                 };
                             match users {
                                 Some(users) => {
-                                    let users_set: std::collections::HashSet<String> = users
-                                        .split(", ")
-                                        .map(|s| s.to_string())
-                                        .collect::<std::collections::HashSet<String>>();
+                                    let users_set: std::collections::HashSet<String> =
+                                        convert_string_to_set(users);
 
                                     if users_set.contains(&authenticated.user_id.to_string()) {
                                         add_user_to_upvoted_by(users_set, -1);
@@ -729,6 +726,124 @@ impl MutationRoot {
                     Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
                 }
             }
+            Unauthenticated => Err(FieldError::new(
+                "Authentication Failed",
+                juniper::Value::Null,
+            )),
+        };
+    }
+
+    #[graphql(description = "upvote buzz/reply")]
+    async fn change_follow_user(
+        jwt: String,
+        follow_id: String,
+        context: &Context,
+    ) -> FieldResult<schemas::users::FollowResponse> {
+        let connection = &context.connection;
+        let authentication = authenticate(jwt).await;
+
+        let change_following_table = |mut following_table: entity::users::ActiveModel,
+                                      follow: bool| {
+            let followers_list = following_table
+                .get(entity::users::Column::Followers)
+                .into_value()
+                .unwrap()
+                .unwrap::<Option<String>>();
+
+            let mut followers_set: std::collections::HashSet<String> =
+                convert_string_to_set(followers_list.unwrap_or_else(|| "".to_string()));
+
+            if follow {
+                followers_set.insert(follow_id.clone());
+                following_table.followers = Set(Some(convert_set_to_string(followers_set)));
+            } else {
+                followers_set.remove(&follow_id);
+                following_table.followers = Set(Some(convert_set_to_string(followers_set)));
+            }
+            following_table
+        };
+
+        return match authentication {
+            Authenticated(authenticated) => {
+                let get_follower = entity::users::Entity::find_by_id(authenticated.user_id)
+                    .one(connection)
+                    .await;
+
+                let get_following =
+                    entity::users::Entity::find_by_id(follow_id.parse::<i64>().unwrap())
+                        .one(connection)
+                        .await;
+
+                match get_follower {
+                    Ok(follower) => match follower {
+                        Some(follower) => match get_following {
+                            Ok(following) => match following {
+                                Some(following) => {
+                                    let mut follower_table: entity::users::ActiveModel =
+                                        follower.into();
+                                    let mut following_table: entity::users::ActiveModel =
+                                        following.into();
+                                    let following_list = follower_table
+                                        .get(entity::users::Column::Following)
+                                        .into_value()
+                                        .unwrap()
+                                        .unwrap::<Option<String>>();
+
+                                    let mut following_list_set: std::collections::HashSet<String> =
+                                        convert_string_to_set(
+                                            following_list.unwrap_or_else(|| "".to_string()),
+                                        );
+                                    if following_list_set.contains(&follow_id) {
+                                        following_list_set.remove(&follow_id);
+                                        following_table =
+                                            change_following_table(following_table, false);
+                                    } else {
+                                        following_list_set.insert(follow_id.clone());
+                                        following_table =
+                                            change_following_table(following_table, true);
+                                    }
+                                    follower_table.following = Set(Some(convert_set_to_string(
+                                        following_list_set.clone(),
+                                    )));
+                                    let follower_update = follower_table.update(connection).await;
+                                    let following_update = following_table.update(connection).await;
+                                    match follower_update {
+                                        Ok(_) => match following_update {
+                                            Ok(following_model) => {
+                                                Ok(schemas::users::FollowResponse {
+                                                    following_id: following_model.id.to_string(),
+                                                    is_following: following_list_set
+                                                        .contains(&follow_id),
+                                                })
+                                            }
+                                            Err(e) => Err(FieldError::new(
+                                                e.to_string(),
+                                                juniper::Value::Null,
+                                            )),
+                                        },
+                                        Err(e) => Err(FieldError::new(
+                                            e.to_string(),
+                                            juniper::Value::Null,
+                                        )),
+                                    }
+                                }
+
+                                None => Err(FieldError::new(
+                                    "Following user not found",
+                                    juniper::Value::Null,
+                                )),
+                            },
+                            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                        },
+                        None => Err(FieldError::new(
+                            "Follower user not found",
+                            juniper::Value::Null,
+                        )),
+                    },
+                    Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+                }
+            }
+
             Unauthenticated => Err(FieldError::new(
                 "Authentication Failed",
                 juniper::Value::Null,

@@ -1,9 +1,3 @@
-#[derive(GraphQLInputObject)]
-#[graphql(description = "upvote a buzz/reply")]
-pub struct UpvoteInput {
-    pub id: String,
-}
-
 #[derive(GraphQLObject)]
 pub struct RatingsDetails {
     pub id: i32,
