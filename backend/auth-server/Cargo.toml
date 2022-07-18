@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = {version = "4", features = ["openssl"]}
+actix-web = { version = "4", features = ["openssl"] }
 openssl = { version = "0.10", features = ["v110"] }
 argonautica = "0.2.0"
 serde = { version = "*", features = ["derive"] }
@@ -16,11 +16,11 @@ chrono = "*"
 futures = "0.3"
 
 [dependencies.sea-orm]
-version = "^0.8.0"
+version = "^0.9.0"
 features = [
-  "debug-print",
-  "runtime-actix-native-tls",
-#   "sqlx-mysql",
-  "sqlx-postgres",
-  # "sqlx-sqlite",
+    "debug-print",
+    "runtime-actix-native-tls",
+    #   "sqlx-mysql",
+    "sqlx-postgres",
+    # "sqlx-sqlite",
 ]

@@ -15,8 +15,8 @@ members = [
 ]
 
 [dependencies]
-actix-web = {version = "4", features = ["openssl"]}
-openssl = { version = "0.10", features = ["v110"]}
+actix-web = { version = "4", features = ["openssl"] }
+openssl = { version = "0.10", features = ["v110"] }
 serde = { version = "*", features = ["derive"] }
 reqwest = { version = "*", features = ["json"] }
 chrono = "*"
@@ -37,13 +37,13 @@ futures = "0.3"
 actix-web-lab = "0.10"
 
 [dependencies.sea-orm]
-version = "^0.8.0"
+version = "^0.9.0"
 features = [
-  "debug-print",
-  "runtime-actix-native-tls",
-#   "sqlx-mysql",
-  "sqlx-postgres",
-  # "sqlx-sqlite",
+    "debug-print",
+    "runtime-actix-native-tls",
+    #   "sqlx-mysql",
+    "sqlx-postgres",
+    # "sqlx-sqlite",
 ]
 
 [[bin]]
