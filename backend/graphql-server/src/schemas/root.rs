@@ -1,5 +1,5 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode};
-use sea_orm::{entity::*, DatabaseConnection, InsertResult};
+use sea_orm::{entity::*, query::*, DatabaseConnection, DbErr, InsertResult};
 
 use crate::lib::{
     common::*,
@@ -24,8 +24,64 @@ pub struct QueryRoot;
 
 #[juniper::graphql_object(Context = Context)]
 impl QueryRoot {
-    async fn get_latest_buzz(_context: &Context) -> FieldResult<i32> {
-        Ok(1)
+    async fn get_buzzes(
+        page_details: schemas::buzz::GetAllBuzzInput,
+        context: &Context,
+    ) -> FieldResult<schemas::buzz::AllBuzzResult> {
+        let connection = &context.connection;
+
+        let paginated_posts = match page_details.user_id {
+            Some(user_id) => {
+                let posts = entity::buzz::Entity::find()
+                    .filter(entity::buzz::Column::UserId.eq(user_id.parse::<i64>().unwrap()))
+                    .order_by(entity::buzz::Column::CreatedAt, Order::Desc)
+                    .paginate(connection, page_details.page_size as usize);
+                posts
+            }
+
+            None => {
+                let posts = entity::buzz::Entity::find()
+                    .order_by(entity::buzz::Column::CreatedAt, Order::Desc)
+                    .paginate(connection, page_details.page_size as usize);
+                posts
+            }
+        };
+
+        let total_pages = paginated_posts.num_pages().await.unwrap() as i32;
+        let total_buzzes = paginated_posts.num_items().await.unwrap() as i32;
+
+        let fetch_buzzes: Result<Vec<entity::buzz::Model>, DbErr> = paginated_posts
+            .fetch_page((page_details.page_number - 1) as usize)
+            .await;
+
+        return match fetch_buzzes {
+            Ok(buzzes) => {
+                let return_buzzes: Vec<schemas::buzz::BuzzResult> = buzzes
+                    .into_iter()
+                    .map(|buzz| schemas::buzz::BuzzResult {
+                        id: buzz.id.to_string(),
+                        user_id: buzz.user_id.to_string(),
+                        description: buzz.description.to_string(),
+                        image_link: buzz.image_link,
+                        video_link: buzz.video_link,
+                        buzz_words: buzz.buzz_words,
+                        mentioned_users: buzz.mentioned_users,
+                        ratings_id: Some(buzz.ratings_id.unwrap_or(-1).to_string()),
+                        created_at: buzz.created_at,
+                    })
+                    .collect();
+
+                Ok(schemas::buzz::AllBuzzResult {
+                    buzzes: return_buzzes,
+                    total_buzzes,
+                    total_pages,
+                    page_number: page_details.page_number,
+                    page_size: page_details.page_size,
+                })
+            }
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
     }
 }
 
@@ -57,7 +113,7 @@ impl MutationRoot {
             ..Default::default()
         };
 
-        let auth_insert: Result<InsertResult<entity::auth::ActiveModel>, migration::DbErr> =
+        let auth_insert: Result<InsertResult<entity::auth::ActiveModel>, DbErr> =
             entity::auth::Entity::insert(auth_table)
                 .exec(connection)
                 .await;
@@ -174,7 +230,7 @@ impl MutationRoot {
                         user.profile_picture = Set(user_modify.profile_picture);
                         user.location_or_region = Set(user_modify.location_or_region);
 
-                        let user: Result<entity::users::Model, migration::DbErr> =
+                        let user: Result<entity::users::Model, DbErr> =
                             user.update(connection).await;
 
                         match user {
@@ -220,7 +276,7 @@ impl MutationRoot {
                             let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
 
                             auth.username = Set(username);
-                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                            let auth: Result<entity::auth::Model, DbErr> =
                                 auth.update(connection).await;
                             match auth {
                                 Ok(_) => Ok(true),
@@ -270,7 +326,7 @@ impl MutationRoot {
                                 .unwrap();
 
                             auth.user_password = Set(password);
-                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                            let auth: Result<entity::auth::Model, DbErr> =
                                 auth.update(connection).await;
                             match auth {
                                 Ok(_) => Ok(true),
@@ -309,7 +365,7 @@ impl MutationRoot {
                             let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
 
                             auth.email = Set(email);
-                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                            let auth: Result<entity::auth::Model, DbErr> =
                                 auth.update(connection).await;
                             match auth {
                                 Ok(_) => Ok(true),
@@ -352,7 +408,7 @@ impl MutationRoot {
                             let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
 
                             auth.contact_number = Set(Some(contact_number));
-                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                            let auth: Result<entity::auth::Model, DbErr> =
                                 auth.update(connection).await;
                             match auth {
                                 Ok(_) => Ok(true),
@@ -391,7 +447,7 @@ impl MutationRoot {
                             let mut auth: entity::auth::ActiveModel = auth.unwrap().into();
 
                             auth.password_version = Set(auth.password_version.unwrap() + 0.1_f64);
-                            let auth: Result<entity::auth::Model, migration::DbErr> =
+                            let auth: Result<entity::auth::Model, DbErr> =
                                 auth.update(connection).await;
                             match auth {
                                 Ok(_) => Ok(true),
@@ -430,12 +486,10 @@ impl MutationRoot {
                         ..Default::default()
                     };
 
-                    let ratings_insert: Result<
-                        InsertResult<entity::ratings::ActiveModel>,
-                        migration::DbErr,
-                    > = entity::ratings::Entity::insert(ratings_table)
-                        .exec(connection)
-                        .await;
+                    let ratings_insert: Result<InsertResult<entity::ratings::ActiveModel>, DbErr> =
+                        entity::ratings::Entity::insert(ratings_table)
+                            .exec(connection)
+                            .await;
 
                     match ratings_insert {
                         Ok(ratings) => {
@@ -547,12 +601,10 @@ impl MutationRoot {
                         ..Default::default()
                     };
 
-                    let ratings_insert: Result<
-                        InsertResult<entity::ratings::ActiveModel>,
-                        migration::DbErr,
-                    > = entity::ratings::Entity::insert(ratings_table)
-                        .exec(connection)
-                        .await;
+                    let ratings_insert: Result<InsertResult<entity::ratings::ActiveModel>, DbErr> =
+                        entity::ratings::Entity::insert(ratings_table)
+                            .exec(connection)
+                            .await;
 
                     match ratings_insert {
                         Ok(ratings) => {
