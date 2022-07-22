@@ -46,6 +46,12 @@ features = [
     # "sqlx-sqlite",
 ]
 
+[profile.release]
+strip = true
+panic = 'abort'
+codegen-units = 1
+ lto = true
+
 [[bin]]
 name = "graphql-server"
 path = "graphql-server/src/main.rs"
