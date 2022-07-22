@@ -21,3 +21,9 @@ pub struct FollowResponse {
     pub following_id: String,
     pub is_following: bool,
 }
+
+#[derive(GraphQLObject)]
+pub struct FollowList {
+    pub followers: String,
+    pub following: String,
+}

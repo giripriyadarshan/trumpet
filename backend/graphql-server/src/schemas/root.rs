@@ -246,6 +246,31 @@ impl QueryRoot {
             Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
         };
     }
+
+    async fn get_user_follows(
+        user_id: String,
+        context: &Context,
+    ) -> FieldResult<schemas::users::FollowList> {
+        let connection = &context.connection;
+
+        let user = entity::users::Entity::find()
+            .filter(entity::users::Column::Id.eq(user_id.parse::<i64>().unwrap()))
+            .one(connection)
+            .await;
+
+        return match user {
+            Ok(user) => match user {
+                Some(user) => Ok(schemas::users::FollowList {
+                    following: user.following.unwrap_or_else(|| "".to_string()),
+                    followers: user.followers.unwrap_or_else(|| "".to_string()),
+                }),
+
+                None => Err(FieldError::new("User not found", juniper::Value::Null)),
+            },
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
+    }
 }
 
 pub struct MutationRoot;
