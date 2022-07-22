@@ -115,6 +115,52 @@ impl QueryRoot {
             Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
         };
     }
+
+    async fn get_replies(
+        page_details: schemas::reply::GetAllRepliesInput,
+        context: &Context,
+    ) -> FieldResult<schemas::reply::AllReplyResult> {
+        let connection = &context.connection;
+
+        let paginated_posts = entity::reply::Entity::find()
+            .filter(entity::reply::Column::BuzzId.eq(page_details.buzz_id.parse::<i64>().unwrap()))
+            .order_by(entity::reply::Column::CreatedAt, Order::Desc)
+            .paginate(connection, page_details.page_size as usize);
+
+        let total_pages = paginated_posts.num_pages().await.unwrap() as i32;
+        let total_replies = paginated_posts.num_items().await.unwrap() as i32;
+
+        let fetch_replies: Result<Vec<entity::reply::Model>, DbErr> = paginated_posts
+            .fetch_page((page_details.page_number - 1) as usize)
+            .await;
+
+        return match fetch_replies {
+            Ok(replies) => {
+                let return_replies = replies
+                    .into_iter()
+                    .map(|reply| schemas::reply::ReplyResult {
+                        id: reply.id.to_string(),
+                        buzz_id: reply.buzz_id.to_string(),
+                        reply_content: "".to_string(),
+                        buzz_words: None,
+                        mentioned_users: None,
+                        ratings_id: None,
+                        user_id: reply.user_id.to_string(),
+                        created_at: reply.created_at,
+                    })
+                    .collect();
+                Ok(schemas::reply::AllReplyResult {
+                    replies: return_replies,
+                    total_replies,
+                    total_pages,
+                    page_number: page_details.page_number,
+                    page_size: page_details.page_size,
+                })
+            }
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
+    }
 }
 
 pub struct MutationRoot;
