@@ -20,6 +20,8 @@ pub struct Model {
     pub following: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub followers: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub upvoted: Option<String>,
     pub created_at: DateTimeWithTimeZone,
 }
 

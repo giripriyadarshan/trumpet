@@ -227,6 +227,25 @@ impl QueryRoot {
             Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
         };
     }
+
+    async fn get_user_upvotes(user_id: String, context: &Context) -> FieldResult<String> {
+        let connection = &context.connection;
+
+        let user = entity::users::Entity::find()
+            .filter(entity::users::Column::Id.eq(user_id.parse::<i64>().unwrap()))
+            .one(connection)
+            .await;
+
+        return match user {
+            Ok(user) => match user {
+                Some(user) => Ok(user.upvoted.unwrap_or_else(|| "".to_string())),
+
+                None => Err(FieldError::new("User not found", juniper::Value::Null)),
+            },
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
+    }
 }
 
 pub struct MutationRoot;
@@ -854,6 +873,7 @@ impl MutationRoot {
                     entity::ratings::Entity::find_by_id(ratings_id.parse::<i64>().unwrap())
                         .one(connection)
                         .await;
+
                 match get_ratings {
                     Ok(upvote) => match upvote {
                         Some(upvote) => {
@@ -863,6 +883,23 @@ impl MutationRoot {
                                 .into_value()
                                 .unwrap()
                                 .unwrap::<Option<String>>();
+
+                            let mut user_table: entity::users::ActiveModel =
+                                entity::users::Entity::find_by_id(authenticated.user_id)
+                                    .one(connection)
+                                    .await
+                                    .unwrap()
+                                    .unwrap()
+                                    .into();
+
+                            let upvoted_by_set = convert_string_to_set(
+                                user_table
+                                    .get(entity::users::Column::Upvoted)
+                                    .into_value()
+                                    .unwrap()
+                                    .unwrap::<Option<String>>()
+                                    .unwrap_or_else(|| "".to_string()),
+                            );
 
                             let mut finally_is_it_upvote: bool = false;
 
@@ -888,6 +925,19 @@ impl MutationRoot {
                                     ratings_table.upvoted_by =
                                         Set(Some(convert_set_to_string(user_details)));
                                 };
+
+                            let mut add_ratings_id_to_upvoting_users =
+                                |mut user_details: std::collections::HashSet<String>,
+                                 value: i64| {
+                                    if value == 1 {
+                                        user_details.insert(ratings_id.to_string());
+                                    } else {
+                                        user_details.remove(&ratings_id.to_string());
+                                    }
+                                    user_table.upvoted =
+                                        Set(Some(convert_set_to_string(user_details)));
+                                };
+
                             match users {
                                 Some(users) => {
                                     let users_set: std::collections::HashSet<String> =
@@ -895,8 +945,10 @@ impl MutationRoot {
 
                                     if users_set.contains(&authenticated.user_id.to_string()) {
                                         add_user_to_upvoted_by(users_set, -1);
+                                        add_ratings_id_to_upvoting_users(upvoted_by_set, -1);
                                     } else {
                                         add_user_to_upvoted_by(users_set, 1);
+                                        add_ratings_id_to_upvoting_users(upvoted_by_set, 1);
                                     }
                                 }
 
@@ -905,15 +957,22 @@ impl MutationRoot {
                                         std::collections::HashSet::new();
 
                                     add_user_to_upvoted_by(users_set, 1);
+                                    add_ratings_id_to_upvoting_users(upvoted_by_set, 1);
                                 }
                             }
 
                             let ratings_update = ratings_table.update(connection).await;
+                            let user_update = user_table.update(connection).await;
                             match ratings_update {
-                                Ok(_) => Ok(schemas::ratings::UpvoteResponse {
-                                    is_upvoted: finally_is_it_upvote,
-                                    id: ratings_id,
-                                }),
+                                Ok(_) => match user_update {
+                                    Ok(_) => Ok(schemas::ratings::UpvoteResponse {
+                                        is_upvoted: finally_is_it_upvote,
+                                        id: ratings_id,
+                                    }),
+                                    Err(e) => {
+                                        Err(FieldError::new(e.to_string(), juniper::Value::Null))
+                                    }
+                                },
                                 Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
                             }
                         }

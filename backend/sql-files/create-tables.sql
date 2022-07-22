@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     location_or_region TEXT,
     following TEXT,
     followers TEXT,
+    upvoted TEXT,
     created_at TIMESTAMP NOT NULL
 );
 

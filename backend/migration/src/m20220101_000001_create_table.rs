@@ -80,6 +80,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(users::Column::LocationOrRegion).text())
                     .col(ColumnDef::new(users::Column::Following).text())
                     .col(ColumnDef::new(users::Column::Followers).text())
+                    .col(ColumnDef::new(users::Column::Upvoted).text())
                     .col(
                         ColumnDef::new(users::Column::CreatedAt)
                             .timestamp_with_time_zone()
