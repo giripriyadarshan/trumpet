@@ -161,6 +161,72 @@ impl QueryRoot {
             Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
         };
     }
+
+    async fn get_user_details(
+        user_id: String,
+        context: &Context,
+    ) -> FieldResult<schemas::users::UserDetails> {
+        let connection = &context.connection;
+
+        let user = entity::users::Entity::find()
+            .filter(entity::users::Column::Id.eq(user_id.parse::<i64>().unwrap()))
+            .one(connection)
+            .await;
+
+        return match user {
+            Ok(user) => match user {
+                Some(user) => Ok(schemas::users::UserDetails {
+                    id: user.id as i32,
+                    auth_id: Some(user.auth_id as i32),
+                    full_name: user.full_name.to_string(),
+                    description: user.description,
+                    profile_picture: user.profile_picture,
+                    location_or_region: user.location_or_region,
+                }),
+
+                None => Err(FieldError::new("User not found", juniper::Value::Null)),
+            },
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
+    }
+
+    async fn get_auth_details(
+        auth_id: String,
+        jwt: Option<String>,
+        context: &Context,
+    ) -> FieldResult<schemas::auth::AuthResponse> {
+        let connection = &context.connection;
+
+        let authentication = authenticate(jwt.unwrap_or_else(|| "".to_string())).await;
+
+        let auth = entity::auth::Entity::find()
+            .filter(entity::auth::Column::Id.eq(auth_id.parse::<i64>().unwrap()))
+            .one(connection)
+            .await;
+
+        return match auth {
+            Ok(user) => match user {
+                Some(user) => match authentication {
+                    Authenticated(_) => Ok(schemas::auth::AuthResponse {
+                        username: user.username.to_string(),
+                        contact_number: user.contact_number,
+                        email: user.email.to_string(),
+                    }),
+
+                    Unauthenticated => Ok(schemas::auth::AuthResponse {
+                        username: user.username.to_string(),
+                        contact_number: None,
+                        email: "".to_string(),
+                    }),
+                },
+
+                None => Err(FieldError::new("User not found", juniper::Value::Null)),
+            },
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
+    }
 }
 
 pub struct MutationRoot;
