@@ -83,6 +83,38 @@ impl QueryRoot {
             Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
         };
     }
+
+    async fn get_buzz_details(
+        id: String,
+        context: &Context,
+    ) -> FieldResult<schemas::buzz::BuzzResult> {
+        let connection = &context.connection;
+
+        let buzz = entity::buzz::Entity::find()
+            .filter(entity::buzz::Column::Id.eq(id.parse::<i64>().unwrap()))
+            .one(connection)
+            .await;
+
+        return match buzz {
+            Ok(buzz) => match buzz {
+                Some(buzz) => Ok(schemas::buzz::BuzzResult {
+                    id: buzz.id.to_string(),
+                    user_id: buzz.user_id.to_string(),
+                    description: buzz.description.to_string(),
+                    image_link: buzz.image_link,
+                    video_link: buzz.video_link,
+                    buzz_words: buzz.buzz_words,
+                    mentioned_users: buzz.mentioned_users,
+                    ratings_id: Some(buzz.ratings_id.unwrap_or(-1).to_string()),
+                    created_at: buzz.created_at,
+                }),
+
+                None => Err(FieldError::new("Buzz not found", juniper::Value::Null)),
+            },
+
+            Err(e) => Err(FieldError::new(e.to_string(), juniper::Value::Null)),
+        };
+    }
 }
 
 pub struct MutationRoot;

@@ -10,6 +10,14 @@ pub struct ReplyInput {
     pub mentioned_users: Option<String>,
 }
 
+#[derive(GraphQLInputObject)]
+#[graphql(description = "Get all replies")]
+pub struct GetAllRepliesInput {
+    pub page_size: i32,
+    pub page_number: i32,
+    pub buzz_id: String,
+}
+
 #[derive(GraphQLObject)]
 pub struct ReplyResult {
     pub id: String,
@@ -20,4 +28,13 @@ pub struct ReplyResult {
     pub mentioned_users: Option<String>,
     pub ratings_id: Option<String>,
     pub created_at: DateTimeWithTimeZone,
+}
+
+#[derive(GraphQLObject)]
+pub struct AllReplyResult {
+    pub replies: Vec<ReplyResult>,
+    pub total_replies: i32,
+    pub total_pages: i32,
+    pub page_number: i32,
+    pub page_size: i32,
 }
