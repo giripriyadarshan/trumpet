@@ -18,12 +18,12 @@ async fn main() -> std::io::Result<()> {
     let internal_builder = ssl_builder();
     let external_builder = ssl_builder();
 
-    let external_address = match std::env::var("AUTH_SERVER_HOST") {
+    let external_address = match std::env::var("AUTH_EXTERNAL_SERVER_HOST") {
         Ok(host) => host,
         Err(_) => "0.0.0.0:9000".to_string(),
     };
 
-    let internal_address = match std::env::var("AUTH_SERVER_HOST") {
+    let internal_address = match std::env::var("AUTH_INTERNAL_SERVER_HOST") {
         Ok(host) => host,
         Err(_) => "0.0.0.0:9004".to_string(),
     };
