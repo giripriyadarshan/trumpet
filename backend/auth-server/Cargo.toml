@@ -14,6 +14,7 @@ entity = { path = "../entity" }
 jsonwebtoken = "^8"
 chrono = "*"
 futures = "0.3"
+actix-cors = "0.6.2"
 
 [dependencies.sea-orm]
 version = "^0.9.0"

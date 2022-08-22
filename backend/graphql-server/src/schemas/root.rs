@@ -1,4 +1,5 @@
-use juniper::{EmptySubscription, FieldError, FieldResult, RootNode};
+use std::io::Write;
+use juniper::{EmptySubscription, FieldError, FieldResult, IntrospectionFormat, RootNode};
 use sea_orm::{entity::*, query::*, DatabaseConnection, DbErr, InsertResult};
 
 use crate::lib::{
@@ -746,8 +747,8 @@ impl MutationRoot {
                                 let buzz_delete = entity::buzz::Entity::delete_by_id(
                                     buzz_id.parse::<i64>().unwrap(),
                                 )
-                                .exec(connection)
-                                .await;
+                                    .exec(connection)
+                                    .await;
                                 match buzz_delete {
                                     Ok(_) => Ok(true),
                                     Err(e) => {
@@ -856,8 +857,8 @@ impl MutationRoot {
                                 let reply_delete = entity::reply::Entity::delete_by_id(
                                     reply_id.parse::<i64>().unwrap(),
                                 )
-                                .exec(connection)
-                                .await;
+                                    .exec(connection)
+                                    .await;
                                 match reply_delete {
                                     Ok(_) => Ok(true),
                                     Err(e) => {
@@ -1136,4 +1137,17 @@ pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<C
 
 pub fn create_schema() -> Schema {
     Schema::new(QueryRoot, MutationRoot, EmptySubscription::new())
+}
+
+pub fn export_schema(ctx: &Context) {
+    let (res, _errors) = juniper::introspect(
+        &Schema::new(QueryRoot, MutationRoot, EmptySubscription::new()),
+        ctx,
+        IntrospectionFormat::default(),
+    ).unwrap();
+
+    // Convert introspection result to json.
+    let json_result = serde_json::to_string_pretty(&res).unwrap();
+    let mut buffer = std::fs::File::create("schema.json").unwrap();
+    buffer.write_all(json_result.as_bytes()).unwrap();
 }

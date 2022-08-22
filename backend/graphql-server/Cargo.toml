@@ -21,7 +21,7 @@ migration = { path = "../migration" }
 
 argonautica = "0.2.0"
 
-actix-web-lab = "0.10"
+actix-web-lab = "0.17.0"
 
 [dependencies.sea-orm]
 version = "^0.9.0"

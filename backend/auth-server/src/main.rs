@@ -1,7 +1,9 @@
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{middleware::Logger, web, App, HttpServer, http};
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
 
 use futures::future;
+
+use actix_cors::Cors;
 
 use sea_orm::DatabaseConnection;
 
@@ -38,7 +40,19 @@ async fn main() -> std::io::Result<()> {
     let external_state = AppState { conn: connection };
 
     let external_server = HttpServer::new(move || {
+
+        let cors = Cors::default()
+            .allowed_origin("http://localhost/")
+            .allowed_origin_fn(|origin, _req_head| {
+                origin.as_bytes().ends_with(b".localhost")
+            })
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .wrap(Logger::default())
             .app_data(web::Data::new(external_state.clone()))
             .route("/jwt/{type}", web::post().to(routes::jwt::jwt))

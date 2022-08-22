@@ -43,6 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     Migrator::up(&connection, None).await.unwrap();
     let state = Context { connection };
+    schemas::root::export_schema(&state);
 
     HttpServer::new(move || {
         App::new()
@@ -57,9 +58,9 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/graphiql").route(web::get().to(graphql_playground)))
     })
-    .bind_openssl(host_address, builder)?
-    .run()
-    .await
+        .bind_openssl(host_address, builder)?
+        .run()
+        .await
 }
 
 async fn graphql(
